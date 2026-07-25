@@ -89,10 +89,18 @@ const WEBHOOK_PATH = "/telegraf/webhook";
 const app = express();
 app.use(express.json());
 
+// Health check endpoints for Railway and monitoring
+app.get("/health", (req, res) => res.status(200).send("OK"));
+app.get("/api/health", (req, res) => res.status(200).json({ status: "ok" }));
+
 // Mount Telegraf webhook middleware BEFORE static and wildcard routes
 if (bot) {
-  app.use(WEBHOOK_PATH, (req, res, next) => {
-    bot.webhookCallback(WEBHOOK_PATH)(req, res, next);
+  const handleWebhook = bot.webhookCallback();
+  app.post(WEBHOOK_PATH, (req, res, next) => {
+    handleWebhook(req, res, next);
+  });
+  app.get(WEBHOOK_PATH, (req, res) => {
+    res.send("Telegram Webhook endpoint active.");
   });
 }
 
@@ -769,14 +777,14 @@ async function start() {
   });
 
   if (bot) {
-    const domainRaw = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || process.env.WEBHOOK_DOMAIN || process.env.APP_URL;
+    const domainRaw = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || process.env.PUBLIC_DOMAIN || process.env.WEBHOOK_DOMAIN || process.env.APP_URL || process.env.DOMAIN;
     let domain = domainRaw ? domainRaw.replace(/^https?:\/\//, '').replace(/\/$/, '') : null;
 
     if (domain && !process.env.USE_POLLING) {
       (async () => {
         try {
           const webhookUrl = `https://${domain}${WEBHOOK_PATH}`;
-          await bot.telegram.setWebhook(webhookUrl);
+          await bot.telegram.setWebhook(webhookUrl, { drop_pending_updates: true });
           console.log(`Bot launched using webhook on ${webhookUrl}`);
         } catch (err: any) {
           console.error("Webhook setup failed, falling back to long polling:", err.message);
