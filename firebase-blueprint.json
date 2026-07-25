@@ -1,0 +1,44 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A telegram bot user interacting with the system.",
+      "type": "object",
+      "properties": {
+        "hdp": {
+          "type": "number",
+          "description": "Counter for hdp clicks"
+        },
+        "omon": {
+          "type": "number",
+          "description": "Counter for omon clicks"
+        }
+      }
+    },
+    "Setting": {
+      "title": "Setting",
+      "description": "A global configuration string.",
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "The configuration value"
+        }
+      }
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": {
+        "$ref": "User"
+      },
+      "description": "Registered telegram users"
+    },
+    "settings/{settingId}": {
+      "schema": {
+        "$ref": "Setting"
+      },
+      "description": "Global bot settings"
+    }
+  }
+}

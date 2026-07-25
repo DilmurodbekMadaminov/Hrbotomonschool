@@ -1,0 +1,6 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "npx tsx server.ts"
+restartPolicyType = "ON_FAILURE"

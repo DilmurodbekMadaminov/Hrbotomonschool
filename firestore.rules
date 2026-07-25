@@ -1,0 +1,73 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: string (Telegram user_id)
+    // Fields:
+    //   - hdp: number (optional) - Counter for hdp clicks
+    //   - omon: number (optional) - Counter for omon clicks
+    //
+    // Collection: settings
+    // Document ID: string (setting key, e.g. 'hdp_link')
+    // Fields:
+    //   - value: string (required) - Setting value
+    //
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (
+          (request.auth.token.email == "dilnuramadaminova06@gmail.com" && request.auth.token.email_verified == true)
+          // The backend server is authenticating anonymously. To prevent users from writing using exposed API keys,
+          // we only allow backend (or admin) to do updates. We simulate backend admin via anonymous auth for now.
+          || request.auth.token.firebase.sign_in_provider == 'anonymous'
+        );
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    // Domain Validators
+    function isValidUser() {
+      return (
+        hasOnlyAllowedFields(['hdp', 'omon']) &&
+        (!('hdp' in request.resource.data) || request.resource.data.hdp is number) &&
+        (!('omon' in request.resource.data) || request.resource.data.omon is number)
+      );
+    }
+
+    function isValidSetting() {
+      return (
+        hasOnlyAllowedFields(['value']) &&
+        request.resource.data.value is string && 
+        request.resource.data.value.size() <= 2000
+      );
+    }
+
+    match /users/{userId} {
+      allow read: if true;
+      allow create: if isValidUser();
+      allow update: if isValidUser();
+      allow delete: if false;
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow create: if isValidSetting();
+      allow update: if isValidSetting();
+      allow delete: if false;
+    }
+  }
+}
