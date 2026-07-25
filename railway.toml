@@ -2,5 +2,5 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "npx tsx server.ts"
 restartPolicyType = "ON_FAILURE"

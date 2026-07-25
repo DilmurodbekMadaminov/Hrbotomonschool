@@ -2,31 +2,13 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import * as fs from 'fs';
-import * as path from 'path';
 
-let firebaseConfig: any = {};
-try {
-  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
-  if (fs.existsSync(configPath)) {
-    firebaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
-  } else if (process.env.FIREBASE_CONFIG) {
-    firebaseConfig = JSON.parse(process.env.FIREBASE_CONFIG);
-  }
-} catch (e) {
-  console.warn("Notice: could not load firebase-applet-config.json:", e);
-}
-
-if (!firebaseConfig.projectId && process.env.FIREBASE_PROJECT_ID) {
-  firebaseConfig.projectId = process.env.FIREBASE_PROJECT_ID;
-}
-if (!firebaseConfig.apiKey && process.env.FIREBASE_API_KEY) {
-  firebaseConfig.apiKey = process.env.FIREBASE_API_KEY;
-}
+const firebaseConfig = JSON.parse(fs.readFileSync('./firebase-applet-config.json', 'utf-8'));
 
 export const app = initializeApp(firebaseConfig);
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
-}, firebaseConfig.firestoreDatabaseId || '(default)');
+}, firebaseConfig.firestoreDatabaseId);
 export const auth = getAuth(app);
 
 export enum OperationType {
