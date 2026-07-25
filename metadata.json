@@ -1,8 +1,6 @@
 {
-  "name": "HDP & Omon School Telegram Bot",
-  "description": "Telegram bot management and admin dashboard for HDP LC and Omon School job applications",
+  "name": "HR Bot & Omon School Portal",
+  "description": "Telegram HR bot and management dashboard for HDP LC and Omon School branches (Urganch, Gurlan, Shovot).",
   "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
