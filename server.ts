@@ -6,9 +6,47 @@ import { LRUCache } from "lru-cache";
 import { Agent } from "https";
 import * as fs from "fs";
 import path from "path";
-import PQueue from "p-queue";
 import { doc, getDoc, setDoc, updateDoc, collection, getDocs, increment } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase.js";
+
+// Fast lightweight native concurrency queue
+class AsyncQueue {
+  private concurrency: number;
+  private running = 0;
+  private queue: (() => void)[] = [];
+
+  constructor(concurrency = 50) {
+    this.concurrency = concurrency;
+  }
+
+  async add<T>(fn: () => Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const task = () => {
+        this.running++;
+        fn()
+          .then(resolve)
+          .catch(reject)
+          .finally(() => {
+            this.running--;
+            this.next();
+          });
+      };
+
+      if (this.running < this.concurrency) {
+        task();
+      } else {
+        this.queue.push(task);
+      }
+    });
+  }
+
+  private next() {
+    if (this.queue.length > 0 && this.running < this.concurrency) {
+      const nextTask = this.queue.shift();
+      if (nextTask) nextTask();
+    }
+  }
+}
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBHOOK_HOST = process.env.APP_URL; // Use AI Studio APP_URL
@@ -17,7 +55,7 @@ const ADMIN_ID = process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : undefined
 const PORT = 3000; // AI Studio requires port 3000
 
 const subCache = new LRUCache<number, boolean>({ max: 10000, ttl: 1000 * 60 * 60 * 12 }); // 12 hours cache for subscribed users
-const messageQueue = new PQueue({ concurrency: 100 }); // Process up to 100 messages concurrently
+const messageQueue = new AsyncQueue(100); // Process up to 100 messages concurrently
 
 if (!BOT_TOKEN) {
   console.error("Missing required environment variable: BOT_TOKEN.\nPlease configure it in the AI Studio Secrets panel.");
