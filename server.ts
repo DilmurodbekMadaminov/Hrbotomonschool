@@ -1,12 +1,13 @@
 import "dotenv/config";
 import { Telegraf, Markup } from "telegraf";
 import express from "express";
+import compression from "compression";
 import { LRUCache } from "lru-cache";
 import { Agent } from "https";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
-import { doc, getDoc, setDoc, collection, getDocs, increment } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs, onSnapshot, increment } from "firebase/firestore";
 import { db, handleFirestoreError, OperationType } from "./firebase.js";
 
 class SimpleQueue {
@@ -87,7 +88,17 @@ if (bot) {
 const WEBHOOK_PATH = "/telegraf/webhook";
 
 const app = express();
+app.use(compression());
 app.use(express.json());
+
+let statsCache = {
+  usersCount: 0,
+  totalHdp: 0,
+  totalOmonUrganch: 0,
+  totalOmonGurlan: 0,
+  totalOmonShovot: 0,
+  totalOmonAll: 0,
+};
 
 // Health check endpoints for Railway and monitoring
 app.get("/health", (req, res) => res.status(200).send("OK"));
@@ -120,15 +131,41 @@ async function initDb() {
   }
 
   try {
-    const settingsSnap = await getDocs(collection(db, 'settings')).catch(() => null);
-    if (settingsSnap) {
-      settingsSnap.forEach((docSnap) => {
+    // Attach realtime snapshot listener for settings (0ms latency updates)
+    onSnapshot(collection(db, 'settings'), (snapshot) => {
+      snapshot.forEach((docSnap) => {
         if (docSnap.data()?.value) {
           settingsCache.set(docSnap.id, docSnap.data().value);
         }
       });
-    }
+    }, (err) => console.error("Settings snapshot notice:", err.message));
 
+    // Attach realtime snapshot listener for user stats (0ms API response)
+    onSnapshot(collection(db, 'users'), (snapshot) => {
+      let totalHdp = 0;
+      let totalOmonUrganch = 0;
+      let totalOmonGurlan = 0;
+      let totalOmonShovot = 0;
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        totalHdp += data.hdp || 0;
+        totalOmonUrganch += data.omon_urganch || 0;
+        totalOmonGurlan += data.omon_gurlan || 0;
+        totalOmonShovot += data.omon_shovot || 0;
+      });
+
+      statsCache = {
+        usersCount: snapshot.size,
+        totalHdp,
+        totalOmonUrganch,
+        totalOmonGurlan,
+        totalOmonShovot,
+        totalOmonAll: totalOmonUrganch + totalOmonGurlan + totalOmonShovot
+      };
+    }, (err) => console.error("Users snapshot notice:", err.message));
+
+    const settingsSnap = await getDocs(collection(db, 'settings')).catch(() => null);
     for (const [key, defVal] of Object.entries(defaults)) {
       if (!settingsSnap || !settingsSnap.docs.some(d => d.id === key)) {
         const docRef = doc(db, 'settings', key);
@@ -168,7 +205,7 @@ async function checkSubscription(ctx: any): Promise<boolean> {
     return pendingCheckSub.get(userId)!;
   }
 
-  // 3. Create check promise with 1.5s timeout & aggressive fallback caching
+  // 3. Create check promise with 800ms timeout & aggressive fallback caching
   const promise = (async (): Promise<boolean> => {
     try {
       const rawChannel = getSettingSync('channel_username', CHANNEL_USERNAME);
@@ -186,7 +223,7 @@ async function checkSubscription(ctx: any): Promise<boolean> {
 
       const memberPromise = ctx.telegram.getChatMember(channelId, userId);
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error("Telegram API timeout")), 1500)
+        setTimeout(() => reject(new Error("Telegram API timeout")), 800)
       );
 
       const member: any = await Promise.race([memberPromise, timeoutPromise]);
@@ -693,6 +730,9 @@ app.get("/api/status", async (req, res) => {
 
 app.get("/api/stats", async (req, res) => {
   try {
+    if (statsCache.usersCount > 0) {
+      return res.json(statsCache);
+    }
     const usersSnap = await getDocs(collection(db, 'users'));
     let totalHdp = 0;
     let totalOmonUrganch = 0;
@@ -707,14 +747,16 @@ app.get("/api/stats", async (req, res) => {
       totalOmonShovot += data.omon_shovot || 0;
     });
 
-    res.json({
+    statsCache = {
       usersCount: usersSnap.size,
       totalHdp,
       totalOmonUrganch,
       totalOmonGurlan,
       totalOmonShovot,
       totalOmonAll: totalOmonUrganch + totalOmonGurlan + totalOmonShovot
-    });
+    };
+
+    res.json(statsCache);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
@@ -754,7 +796,7 @@ async function start() {
   // Mount Vite or static server
   if (process.env.NODE_ENV === "production" || distExists) {
     console.log("Serving static production build from dist/");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { maxAge: "1d", etag: true }));
     app.get('*', (req, res) => {
       const indexFile = path.join(distPath, 'index.html');
       if (fs.existsSync(indexFile)) {
