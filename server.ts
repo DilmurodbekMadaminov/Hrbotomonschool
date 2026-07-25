@@ -84,8 +84,17 @@ if (bot) {
   });
 }
 
+const WEBHOOK_PATH = "/telegraf/webhook";
+
 const app = express();
 app.use(express.json());
+
+// Mount Telegraf webhook middleware BEFORE static and wildcard routes
+if (bot) {
+  app.use(WEBHOOK_PATH, (req, res, next) => {
+    bot.webhookCallback(WEBHOOK_PATH)(req, res, next);
+  });
+}
 
 // ================= DATABASE =================
 async function initDb() {
@@ -93,7 +102,7 @@ async function initDb() {
     hdp_link: 'https://forms.gle/f6ZiQtiqCAH1CLy87',
     omon_link: 'https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor',
     omon_urganch_link: 'https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor',
-    omon_gurlan_link: 'https://forms.gle/97m9hCsBFovYKKrX7',
+    omon_gurlan_link: 'https://docs.google.com/forms/d/e/1FAIpQLSfO59InkqjPVYwJTqsXwFS-RuDilzNMTEzz5hMv56SXqZqFjA/viewform?usp=publish-editor',
     omon_shovot_link: 'https://docs.google.com/forms/d/e/1FAIpQLSesCuKlxEQUzacWRFlHJWMot662B4D9dN2-ZGLKU2h-WxyR3g/viewform?usp=header',
     channel_username: CHANNEL_USERNAME
   };
@@ -345,7 +354,7 @@ if (bot) {
 
       trackBranchClick(ctx.from.id, 'omon_gurlan');
       
-      const omonLink = getSettingSync('omon_gurlan_link') || getSettingSync('omon_link') || 'https://forms.gle/97m9hCsBFovYKKrX7';
+      const omonLink = getSettingSync('omon_gurlan_link') || getSettingSync('omon_link') || 'https://docs.google.com/forms/d/e/1FAIpQLSfO59InkqjPVYwJTqsXwFS-RuDilzNMTEzz5hMv56SXqZqFjA/viewform?usp=publish-editor';
       const safeUrl = formatButtonUrl(omonLink);
 
       return await ctx.reply("Omon School (Gurlan filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
@@ -354,7 +363,7 @@ if (bot) {
     } catch (err: any) {
       console.error("Gurlan hears error:", err);
       return ctx.reply("Omon School (Gurlan filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
-        [Markup.button.url("Ariza topshirish", "https://forms.gle/97m9hCsBFovYKKrX7")],
+        [Markup.button.url("Ariza topshirish", "https://docs.google.com/forms/d/e/1FAIpQLSfO59InkqjPVYwJTqsXwFS-RuDilzNMTEzz5hMv56SXqZqFjA/viewform?usp=publish-editor")],
       ])).catch(() => {});
     }
   });
@@ -415,7 +424,7 @@ if (bot) {
 
       trackBranchClick(ctx.from.id, 'omon_gurlan');
       
-      const omonLink = getSettingSync('omon_gurlan_link') || getSettingSync('omon_link') || 'https://forms.gle/97m9hCsBFovYKKrX7';
+      const omonLink = getSettingSync('omon_gurlan_link') || getSettingSync('omon_link') || 'https://docs.google.com/forms/d/e/1FAIpQLSfO59InkqjPVYwJTqsXwFS-RuDilzNMTEzz5hMv56SXqZqFjA/viewform?usp=publish-editor';
       const safeUrl = formatButtonUrl(omonLink);
 
       return await ctx.reply("Omon School (Gurlan filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
@@ -423,7 +432,7 @@ if (bot) {
       ]));
     } catch (err: any) {
       return ctx.reply("Omon School (Gurlan filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
-        [Markup.button.url("Ariza topshirish", "https://forms.gle/97m9hCsBFovYKKrX7")],
+        [Markup.button.url("Ariza topshirish", "https://docs.google.com/forms/d/e/1FAIpQLSfO59InkqjPVYwJTqsXwFS-RuDilzNMTEzz5hMv56SXqZqFjA/viewform?usp=publish-editor")],
       ])).catch(() => {});
     }
   });
@@ -551,6 +560,18 @@ if (bot) {
     ctx.answerCbQuery("Bekor qilindi").catch(() => {});
   });
 
+  bot.hears([/omon/i, "Omon school", "Omon School", "Omon"], async (ctx) => {
+    try {
+      const subscribed = await checkSubscription(ctx);
+      if (!subscribed) {
+        return ctx.reply("Avval kanalga obuna bo‘ling:", subscriptionKeyboard());
+      }
+      return ctx.reply("Ish joyini tanlang:", mainMenuKeyboard());
+    } catch (err) {
+      return ctx.reply("Ish joyini tanlang:", mainMenuKeyboard());
+    }
+  });
+
   bot.on("message", async (ctx, next) => {
     const userId = ctx.from.id;
     if (userId === ADMIN_ID && adminState.has(userId)) {
@@ -621,6 +642,33 @@ if (bot) {
       return;
     }
     return next();
+  });
+
+  // Catch-all handler for any unhandled text messages so user ALWAYS receives a response
+  bot.on("text", async (ctx) => {
+    try {
+      const subscribed = await checkSubscription(ctx);
+      if (!subscribed) {
+        return ctx.reply("Avval kanalga obuna bo‘ling:", subscriptionKeyboard());
+      }
+      return ctx.reply("Ish joyini tanlang:", mainMenuKeyboard());
+    } catch (err) {
+      return ctx.reply("Ish joyini tanlang:", mainMenuKeyboard());
+    }
+  });
+
+  // Catch-all handler for any unhandled callback queries so inline buttons never freeze
+  bot.on("callback_query", async (ctx) => {
+    await ctx.answerCbQuery().catch(() => {});
+    try {
+      const subscribed = await checkSubscription(ctx);
+      if (!subscribed) {
+        return ctx.reply("Avval kanalga obuna bo‘ling:", subscriptionKeyboard());
+      }
+      return ctx.reply("Ish joyini tanlang:", mainMenuKeyboard());
+    } catch (err) {
+      return ctx.reply("Ish joyini tanlang:", mainMenuKeyboard());
+    }
   });
 }
 
@@ -724,16 +772,17 @@ async function start() {
     const domainRaw = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || process.env.WEBHOOK_DOMAIN || process.env.APP_URL;
     let domain = domainRaw ? domainRaw.replace(/^https?:\/\//, '').replace(/\/$/, '') : null;
 
-    if (domain) {
-      try {
-        const webhookPath = `/telegraf/${bot.secretPathComponent()}`;
-        app.use(bot.webhookCallback(webhookPath));
-        await bot.telegram.setWebhook(`https://${domain}${webhookPath}`);
-        console.log(`Bot launched using webhook on https://${domain}${webhookPath}`);
-      } catch (err: any) {
-        console.error("Webhook setup failed, falling back to long polling:", err.message);
-        startPollingSafely();
-      }
+    if (domain && !process.env.USE_POLLING) {
+      (async () => {
+        try {
+          const webhookUrl = `https://${domain}${WEBHOOK_PATH}`;
+          await bot.telegram.setWebhook(webhookUrl);
+          console.log(`Bot launched using webhook on ${webhookUrl}`);
+        } catch (err: any) {
+          console.error("Webhook setup failed, falling back to long polling:", err.message);
+          startPollingSafely();
+        }
+      })();
     } else {
       startPollingSafely();
     }
