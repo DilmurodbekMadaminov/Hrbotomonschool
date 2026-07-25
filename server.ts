@@ -91,10 +91,10 @@ app.use(express.json());
 async function initDb() {
   const defaults: Record<string, string> = {
     hdp_link: 'https://forms.gle/f6ZiQtiqCAH1CLy87',
-    omon_link: 'https://forms.gle/97m9hCsBFovYKKrX7',
-    omon_urganch_link: 'https://forms.gle/97m9hCsBFovYKKrX7',
+    omon_link: 'https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor',
+    omon_urganch_link: 'https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor',
     omon_gurlan_link: 'https://forms.gle/97m9hCsBFovYKKrX7',
-    omon_shovot_link: 'https://forms.gle/97m9hCsBFovYKKrX7',
+    omon_shovot_link: 'https://docs.google.com/forms/d/e/1FAIpQLSesCuKlxEQUzacWRFlHJWMot662B4D9dN2-ZGLKU2h-WxyR3g/viewform?usp=header',
     channel_username: CHANNEL_USERNAME
   };
 
@@ -322,7 +322,7 @@ if (bot) {
 
       trackBranchClick(ctx.from.id, 'omon_urganch');
       
-      const omonLink = getSettingSync('omon_urganch_link') || getSettingSync('omon_link') || 'https://forms.gle/97m9hCsBFovYKKrX7';
+      const omonLink = getSettingSync('omon_urganch_link') || getSettingSync('omon_link') || 'https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor';
       const safeUrl = formatButtonUrl(omonLink);
 
       return await ctx.reply("Omon School (Urganch filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
@@ -331,7 +331,7 @@ if (bot) {
     } catch (err: any) {
       console.error("Urganch hears error:", err);
       return ctx.reply("Omon School (Urganch filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
-        [Markup.button.url("Ariza topshirish", "https://forms.gle/97m9hCsBFovYKKrX7")],
+        [Markup.button.url("Ariza topshirish", "https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor")],
       ])).catch(() => {});
     }
   });
@@ -368,7 +368,7 @@ if (bot) {
 
       trackBranchClick(ctx.from.id, 'omon_shovot');
       
-      const omonLink = getSettingSync('omon_shovot_link') || getSettingSync('omon_link') || 'https://forms.gle/97m9hCsBFovYKKrX7';
+      const omonLink = getSettingSync('omon_shovot_link') || getSettingSync('omon_link') || 'https://docs.google.com/forms/d/e/1FAIpQLSesCuKlxEQUzacWRFlHJWMot662B4D9dN2-ZGLKU2h-WxyR3g/viewform?usp=header';
       const safeUrl = formatButtonUrl(omonLink);
 
       return await ctx.reply("Omon School (Shovot filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
@@ -377,7 +377,7 @@ if (bot) {
     } catch (err: any) {
       console.error("Shovot hears error:", err);
       return ctx.reply("Omon School (Shovot filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
-        [Markup.button.url("Ariza topshirish", "https://forms.gle/97m9hCsBFovYKKrX7")],
+        [Markup.button.url("Ariza topshirish", "https://docs.google.com/forms/d/e/1FAIpQLSesCuKlxEQUzacWRFlHJWMot662B4D9dN2-ZGLKU2h-WxyR3g/viewform?usp=header")],
       ])).catch(() => {});
     }
   });
@@ -392,7 +392,7 @@ if (bot) {
 
       trackBranchClick(ctx.from.id, 'omon_urganch');
       
-      const omonLink = getSettingSync('omon_urganch_link') || getSettingSync('omon_link') || 'https://forms.gle/97m9hCsBFovYKKrX7';
+      const omonLink = getSettingSync('omon_urganch_link') || getSettingSync('omon_link') || 'https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor';
       const safeUrl = formatButtonUrl(omonLink);
 
       return await ctx.reply("Omon School (Urganch filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
@@ -400,7 +400,7 @@ if (bot) {
       ]));
     } catch (err: any) {
       return ctx.reply("Omon School (Urganch filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
-        [Markup.button.url("Ariza topshirish", "https://forms.gle/97m9hCsBFovYKKrX7")],
+        [Markup.button.url("Ariza topshirish", "https://docs.google.com/forms/d/e/1FAIpQLSda7OhEe_fFn1TDfmzvpjzyvoRQhHLCUMYl1ojKLPJZVYsglg/viewform?usp=publish-editor")],
       ])).catch(() => {});
     }
   });
@@ -438,7 +438,7 @@ if (bot) {
 
       trackBranchClick(ctx.from.id, 'omon_shovot');
       
-      const omonLink = getSettingSync('omon_shovot_link') || getSettingSync('omon_link') || 'https://forms.gle/97m9hCsBFovYKKrX7';
+      const omonLink = getSettingSync('omon_shovot_link') || getSettingSync('omon_link') || 'https://docs.google.com/forms/d/e/1FAIpQLSesCuKlxEQUzacWRFlHJWMot662B4D9dN2-ZGLKU2h-WxyR3g/viewform?usp=header';
       const safeUrl = formatButtonUrl(omonLink);
 
       return await ctx.reply("Omon School (Shovot filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
@@ -446,7 +446,7 @@ if (bot) {
       ]));
     } catch (err: any) {
       return ctx.reply("Omon School (Shovot filiali) uchun ariza topshirish:", Markup.inlineKeyboard([
-        [Markup.button.url("Ariza topshirish", "https://forms.gle/97m9hCsBFovYKKrX7")],
+        [Markup.button.url("Ariza topshirish", "https://docs.google.com/forms/d/e/1FAIpQLSesCuKlxEQUzacWRFlHJWMot662B4D9dN2-ZGLKU2h-WxyR3g/viewform?usp=header")],
       ])).catch(() => {});
     }
   });
